@@ -1233,66 +1233,35 @@ function Invoke-DbaDbLogShipping {
                     if ($setupResult -ne 'Failed') {
                         if (-not $RestoreDataFolder -or -not $RestoreLogFolder) {
                             Write-Message -Message "Restore data folder or restore log folder are not set. Using server defaults" -Level Verbose
+                        }
 
-                            # Get the default data folder
-                            if (-not $RestoreDataFolder) {
-                                $DatabaseRestoreDataFolder = $DestinationServer.DefaultFile
+                        # Get the default data folder
+                        if (-not $RestoreDataFolder) {
+                            $DatabaseRestoreDataFolder = $DestinationServer.DefaultFile
+                        } else {
+                            # Set the restore data folder
+                            if ($RestoreDataFolder.EndsWith("\")) {
+                                $DatabaseRestoreDataFolder = "$RestoreDataFolder$($db.Name)"
                             } else {
-                                # Set the restore data folder
-                                if ($RestoreDataFolder.EndsWith("\")) {
-                                    $DatabaseRestoreDataFolder = "$RestoreDataFolder$($db.Name)"
-                                } else {
-                                    $DatabaseRestoreDataFolder = "$RestoreDataFolder\$($db.Name)"
-                                }
-                            }
-
-                            Write-Message -Message "Restore data folder set to $DatabaseRestoreDataFolder" -Level Verbose
-
-                            # Get the default log folder
-                            if (-not $RestoreLogFolder) {
-                                $DatabaseRestoreLogFolder = $DestinationServer.DefaultLog
-                            }
-
-                            Write-Message -Message "Restore log folder set to $DatabaseRestoreLogFolder" -Level Verbose
-
-                            # Check if the restore data folder exists
-                            Write-Message -Message "Testing database restore data path $DatabaseRestoreDataFolder" -Level Verbose
-                            if ((Test-DbaPath  -Path $DatabaseRestoreDataFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
-                                if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore data folder $DatabaseRestoreDataFolder on $DestinationServerName")) {
-                                    # Try creating the data folder
-                                    try {
-                                        Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
-                                            Write-Message -Message "Creating data folder $DatabaseRestoreDataFolder" -Level Verbose
-                                            $null = New-Item -Path $DatabaseRestoreDataFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force
-                                        }
-                                    } catch {
-                                        $setupResult = "Failed"
-                                        $comment = "Something went wrong creating the restore data directory"
-                                        Stop-Function -Message "Something went wrong creating the restore data directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
-                                    }
-                                }
-                            }
-
-                            # Check if the restore log folder exists
-                            Write-Message -Message "Testing database restore log path $DatabaseRestoreLogFolder" -Level Verbose
-                            if ((Test-DbaPath  -Path $DatabaseRestoreLogFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
-                                if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore log folder $DatabaseRestoreLogFolder on $DestinationServerName")) {
-                                    # Try creating the log folder
-                                    try {
-                                        Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
-
-                                        Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
-                                            Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
-                                            $null = New-Item -Path $DatabaseRestoreLogFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force
-                                        }
-                                    } catch {
-                                        $setupResult = "Failed"
-                                        $comment = "Something went wrong creating the restore log directory"
-                                        Stop-Function -Message "Something went wrong creating the restore log directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
-                                    }
-                                }
+                                $DatabaseRestoreDataFolder = "$RestoreDataFolder\$($db.Name)"
                             }
                         }
+
+                        Write-Message -Message "Restore data folder set to $DatabaseRestoreDataFolder" -Level Verbose
+
+                        # Get the default log folder
+                        if (-not $RestoreLogFolder) {
+                            $DatabaseRestoreLogFolder = $DestinationServer.DefaultLog
+                        } else {
+                            # Set the restore log folder
+                            if ($RestoreLogFolder.EndsWith("\")) {
+                                $DatabaseRestoreLogFolder = "$RestoreLogFolder$($db.Name)"
+                            } else {
+                                $DatabaseRestoreLogFolder = "$RestoreLogFolder\$($db.Name)"
+                            }
+                        }
+
+                        Write-Message -Message "Restore log folder set to $DatabaseRestoreLogFolder" -Level Verbose                        
                     }
 
                     # Check if the full backup path can be reached
